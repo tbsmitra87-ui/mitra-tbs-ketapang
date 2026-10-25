@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="id">
 <head>
+  <link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#075234">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mitra TBS">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#176b43">
 <title>Mitra TBS Ketapang</title>
@@ -134,4 +140,12 @@ window.loadProfile=async id=>{const {data:u}=await sb.from('profil_pengguna').se
 function setupTabs(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['prices','pks','users'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab))})}
 initClient();
 </script>
+  <script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .catch(error => console.error('Service worker gagal:', error));
+  });
+}
+  </script>
 </body></html>
