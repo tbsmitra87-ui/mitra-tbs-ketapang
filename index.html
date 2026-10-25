@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#176b43">
+<title>Mitra TBS Ketapang</title>
+<style>
+:root{--green:#176b43;--green2:#218653;--bg:#f4f7f5;--card:#fff;--text:#173326;--muted:#64756c;--line:#dfe8e2;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+header{background:var(--green);color:white;padding:18px max(16px,calc((100% - 900px)/2));display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:23px}
+header h1{font-size:18px;margin:0}header p{font-size:12px;margin:3px 0 0;color:#d8eee1}
+main{max-width:900px;margin:20px auto;padding:0 14px 50px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 3px 12px #12331a08}
+h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px}.muted{color:var(--muted);font-size:13px}.hidden{display:none!important}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 6px}input,select,textarea{width:100%;padding:12px;border:1px solid #cad8cf;border-radius:10px;font:inherit;background:#fff;color:var(--text)}textarea{min-height:84px;resize:vertical}
+button,.btn{border:0;border-radius:10px;padding:12px 15px;font:600 14px system-ui;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none}
+.primary{background:var(--green);color:#fff}.secondary{background:#e8f2ec;color:var(--green)}.danger{background:#fff0ef;color:var(--red)}.full{width:100%;margin-top:14px}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.notice{border-radius:10px;padding:11px 13px;background:#eef6f0;font-size:13px;margin:10px 0}.error{background:#fff0ef;color:var(--red)}.price{font-size:28px;font-weight:800;color:var(--green);margin:8px 0}.tag{font-size:11px;border-radius:999px;padding:4px 8px;background:#e8f2ec;color:var(--green)}
+.item{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}.itemtop{display:flex;align-items:start;justify-content:space-between;gap:10px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tabs button{background:#e4ece7;color:var(--text)}.tabs button.active{background:var(--green);color:white}.small{font-size:12px}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+</style>
+</head>
+<body>
+<header><div class="logo">🌿</div><div><h1>Mitra TBS Ketapang</h1><p>Pemantauan Harga Tandan Buah Segar</p></div></header>
+<main>
+  <section id="config" class="card">
+    <h2>Pengaturan koneksi online</h2>
+    <p class="muted">Masukkan URL dan anon/public key project Supabase Anda. Pengaturan ini disimpan di browser perangkat ini. Jangan pernah memasukkan service_role key di sini.</p>
+    <label>Supabase Project URL</label><input id="sbUrl" placeholder="https://xxxxxxxx.supabase.co">
+    <label>Supabase anon/public key</label><input id="sbKey" placeholder="eyJ...">
+    <button class="primary full" id="saveConfig">Simpan koneksi</button>
+    <div class="notice">Database Bapak sudah disiapkan. Masukkan Project URL dan anon/public key Supabase untuk menghubungkan aplikasi. Jangan gunakan service_role key.</div>
+  </section>
+  <section id="login" class="card hidden">
+    <h2>Login</h2><p class="muted">Akun user dibuat oleh admin utama. Pendaftaran umum tidak tersedia.</p>
+    <label>Email / username login</label><input id="loginEmail" type="email" autocomplete="username" placeholder="email akun">
+    <label>Kata sandi</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Kata sandi">
+    <button class="primary full" id="loginBtn">Login</button>
+    <div id="loginMsg" class="notice hidden"></div>
+  </section>
+  <section id="app" class="hidden">
+    <div class="card topline"><div><h2 id="welcome">Dashboard</h2><div id="roleLabel" class="muted"></div></div><button class="secondary" id="logoutBtn">Keluar</button></div>
+    <div id="userView" class="hidden">
+      <div class="card"><h2>Harga TBS Anda</h2><p class="muted">Hanya PKS yang diberikan oleh admin akan ditampilkan. Halaman berlangganan pembaruan harga saat tersedia.</p><div id="userPrices"></div></div>
+      <div class="card"><h2>Permohonan SPB</h2><p class="muted">Pilih PKS yang diizinkan, lengkapi data, lalu WhatsApp akan dibuka dengan pesan yang siap dikirim. SPB tetap diterbitkan oleh perusahaan di luar aplikasi.</p>
+        <label>PKS tujuan</label><select id="spbPks"><option value="">Memuat PKS...</option></select>
+        <div class="row"><div><label>Nama pemohon</label><input id="spbName" placeholder="Nama lengkap"></div><div><label>Nama supplier</label><input id="spbSupplier" placeholder="Nama supplier"></div></div>
+        <div class="row"><div><label>Tonase diajukan (ton)</label><input id="spbTonnage" type="number" min="0.01" step="0.01" placeholder="Contoh: 8.5"></div><div><label>Tanggal permohonan</label><input id="spbDate" type="date"></div></div>
+        <label>Keterangan</label><textarea id="spbNote" placeholder="Keterangan tambahan (opsional)"></textarea>
+        <button class="primary full" id="sendWhatsApp">Lanjutkan ke WhatsApp</button><div id="spbMsg" class="notice hidden"></div>
+      </div>
+    </div>
+    <div id="adminView" class="hidden">
+      <div class="tabs"><button class="active" data-tab="prices">Harga TBS</button><button data-tab="pks">Kelola PKS</button><button data-tab="users">Akun & Akses</button></div>
+      <section id="tab-prices" class="card"><h2>Perbarui harga per PKS</h2><p class="muted">Harga terbaru saja yang disimpan. Tidak ada riwayat harga lama.</p>
+        <label>Pilih PKS</label><select id="pricePks"></select>
+        <div class="row"><div><label>Harga (Rp/kg)</label><input id="priceValue" type="number" min="0" step="1" placeholder="Contoh: 3250"></div><div><label>Tanggal berlaku</label><input id="priceDate" type="date"></div></div>
+        <button class="primary full" id="savePrice">Simpan harga terbaru</button><div id="priceMsg" class="notice hidden"></div><div id="adminPriceList"></div>
+      </section>
+      <section id="tab-pks" class="card hidden"><h2>Kelola PKS / perusahaan</h2>
+        <input id="pksId" type="hidden">
+        <label>Nama PKS/perusahaan</label><input id="pksName" placeholder="Contoh: PT. BGA">
+        <label>Nomor WhatsApp tujuan</label><input id="pksWa" inputmode="tel" placeholder="Contoh: 62812xxxxxxxx">
+        <p class="muted">Gunakan format internasional angka saja, misalnya 62812xxxx. Hanya admin yang bisa mengubah nomor ini.</p>
+        <div class="row"><button class="primary" id="savePks">Simpan PKS</button><button class="secondary" id="resetPks">Kosongkan form</button></div>
+        <div id="pksMsg" class="notice hidden"></div><div id="pksList"></div>
+      </section>
+      <section id="tab-users" class="card hidden"><h2>Akun pengguna</h2>
+        <p class="muted">Admin dapat membuat akun langsung dari aplikasi ini. Untuk akun baru, isi email dan kata sandi. Untuk mengubah akses akun yang sudah ada, tekan tombol Edit akses pada daftar pengguna.</p>
+        <input id="userUid" type="hidden">
+        <label>Email pengguna</label><input id="userEmail" type="email" autocomplete="off" placeholder="contoh@email.com">
+        <label>Kata sandi awal (minimal 8 karakter)</label><input id="userPassword" type="password" autocomplete="new-password" placeholder="Buat kata sandi awal">
+        <label>Nama tampilan</label><input id="userName" placeholder="Nama user">
+        <label>Peran</label><select id="userRole"><option value="pengguna">Pengguna</option><option value="admin">Admin utama</option></select>
+        <label>Status akun</label><select id="userActive"><option value="true">Aktif</option><option value="false">Nonaktif</option></select>
+        <label>PKS yang boleh dilihat (pilih satu atau beberapa)</label><div id="userPksChecks" class="item">Daftar PKS akan tampil di sini.</div>
+        <button class="primary full" id="saveUser">Simpan profil & akses</button><div id="userMsg" class="notice hidden"></div><div id="usersList"></div>
+      </section>
+    </div>
+  </section>
+  <section id="status" class="card hidden"></section>
+</main>
+<footer>Mitra TBS Ketapang · Prototype online awal</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const $ = id => document.getElementById(id);
+let sb = null, currentUser = null, profile = null, pksCache = [], pricesCache = [], allowedPks = [];
+const today = new Date(); $('spbDate').value = new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10); $('priceDate').value = $('spbDate').value;
+function msg(id,text,error=false){const el=$(id);el.textContent=text;el.classList.remove('hidden');el.classList.toggle('error',error)}
+function hide(id){$(id).classList.add('hidden')}
+function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0)}
+function show(id){$(id).classList.remove('hidden')}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dateId(s){if(!s)return 'Tanggal belum diatur';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
+function config(){return {url:localStorage.getItem('mtbs_url')||'',key:localStorage.getItem('mtbs_key')||''}}
+function initClient(){const c=config();if(!c.url||!c.key){show('config');hide('login');return}if(!window.supabase||typeof window.supabase.createClient!=='function'){show('config');hide('login');msg('config','Pustaka koneksi Supabase belum termuat. Pastikan internet aktif, lalu buka ulang halaman ini di Chrome. Jika tetap sama, gunakan versi aplikasi yang dihosting online.',true);return}try{sb=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});hide('config');show('login');sb.auth.getSession().then(({data,error})=>{if(error){show('config');msg('config','Koneksi tersimpan, tetapi pemeriksaan sesi gagal: '+error.message,true);return}if(data.session)loadApp()}).catch(e=>{show('config');msg('config','Gagal memeriksa koneksi: '+(e.message||e),true)})}catch(e){show('config');hide('login');msg('config','Tidak dapat memulai koneksi: '+(e.message||e),true)}}
+$('saveConfig').addEventListener('click',()=>{try{const url=$('sbUrl').value.trim(),key=$('sbKey').value.trim();if(!url.startsWith('https://')||!key){msg('config','URL atau anon/public key belum benar.',true);return}localStorage.setItem('mtbs_url',url);localStorage.setItem('mtbs_key',key);msg('config','Pengaturan tersimpan. Memeriksa pustaka koneksi...',false);initClient()}catch(e){msg('config','Browser tidak mengizinkan penyimpanan lokal untuk halaman ini. Buka aplikasi melalui Chrome atau gunakan versi online. Detail: '+(e.message||e),true)}});
+$('loginBtn').onclick=async()=>{hide('loginMsg');const {error}=await sb.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error){msg('loginMsg','Login gagal: '+error.message,true);return}await loadApp()};
+$('logoutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;profile=null;hide('app');show('login')};
+async function loadApp(){const {data:{user},error}=await sb.auth.getUser();if(error||!user){show('login');return}currentUser=user;
+ const {data:p,error:e}=await sb.from('profil_pengguna').select('*').eq('id',user.id).maybeSingle();
+ if(e||!p||!p.aktif){await sb.auth.signOut();msg('loginMsg',!p?'Profil belum dibuat admin.':'Akun dinonaktifkan. Hubungi admin.',true);show('login');hide('app');return}
+ profile=p;hide('login');hide('config');show('app');$('welcome').textContent='Halo, '+(p.nama||user.email);$('roleLabel').textContent=p.peran==='admin'?'Admin utama':'Akun user';
+ show(p.peran==='admin'?'adminView':'userView');hide(p.peran==='admin'?'userView':'adminView');
+ await refreshData();if(p.peran==='admin')setupTabs();
+}
+async function refreshData(){const {data:pks,error}=await sb.from('pks').select('*').order('nama');if(error){alert('Gagal memuat PKS: '+error.message);return}pksCache=pks||[];
+ const {data:pr,error:pe}=await sb.from('harga_tbs').select('*');if(pe){alert('Gagal memuat harga: '+pe.message);return}pricesCache=pr||[];
+ if(profile.peran==='admin'){renderAdminPrices();renderPks();renderUserPksChecks();await renderUsers()}else{const {data:a}=await sb.from('akses_pks').select('pks_id').eq('pengguna_id',currentUser.id);allowedPks=(a||[]).map(x=>String(x.pks_id));renderUserPrices();renderSpbOptions()}
+}
+function priceFor(id){return pricesCache.find(x=>String(x.pks_id)===String(id))}
+function renderUserPrices(){const list=pksCache.filter(p=>allowedPks.includes(String(p.id)));$('userPrices').innerHTML=list.length?list.map(p=>{const pr=priceFor(p.id);return `<div class="item"><div class="itemtop"><h3>${escapeHtml(p.nama)}</h3><span class="tag">Harga terbaru</span></div><div class="price">${pr?rupiah(pr.harga_per_kg)+'/kg':'Belum tersedia'}</div><div class="muted">Berlaku: ${pr?dateId(pr.tanggal_berlaku):'Belum ditetapkan'}</div></div>`}).join(''):'<div class="notice">Belum ada PKS yang ditetapkan untuk akun Anda. Hubungi admin.</div>'}
+function renderSpbOptions(){const list=pksCache.filter(p=>allowedPks.includes(String(p.id)));$('spbPks').innerHTML='<option value="">Pilih PKS tujuan</option>'+list.map(p=>`<option value="${p.id}">${escapeHtml(p.nama)}</option>`).join('')}
+function renderAdminPrices(){$('pricePks').innerHTML=pksCache.map(p=>`<option value="${p.id}">${escapeHtml(p.nama)}</option>`).join('');$('adminPriceList').innerHTML=pksCache.map(p=>{const pr=priceFor(p.id);return `<div class="item"><div class="itemtop"><h3>${escapeHtml(p.nama)}</h3><span class="tag">Harga saat ini</span></div><div class="price">${pr?rupiah(pr.harga_per_kg)+'/kg':'Belum diatur'}</div><div class="muted">Berlaku: ${pr?dateId(pr.tanggal_berlaku):'—'}</div></div>`}).join('')}
+function renderPks(){$('pksList').innerHTML=pksCache.map(p=>`<div class="item"><div class="itemtop"><div><h3>${escapeHtml(p.nama)}</h3><div class="muted">WhatsApp: ${escapeHtml(p.nomor_whatsapp||'Belum diatur')}</div></div><div class="row"><button class="secondary" onclick="editPks('${p.id}')">Ubah</button><button class="danger" onclick="deletePks('${p.id}')">Hapus</button></div></div></div>`).join('')}
+window.editPks=id=>{const p=pksCache.find(x=>x.id===id);if(!p)return;$('pksId').value=p.id;$('pksName').value=p.nama;$('pksWa').value=p.nomor_whatsapp||''};
+window.deletePks=async id=>{if(!confirm('Hapus PKS ini? Akses user terkait juga akan terhapus.'))return;const {error}=await sb.from('pks').delete().eq('id',id);if(error){alert('Gagal: '+error.message);return}await refreshData()};
+$('savePks').onclick=async()=>{hide('pksMsg');const id=$('pksId').value,name=$('pksName').value.trim(),wa=$('pksWa').value.replace(/\D/g,'');if(!name){msg('pksMsg','Nama PKS wajib diisi.',true);return}if(wa&&wa.length<10){msg('pksMsg','Nomor WhatsApp terlalu pendek. Gunakan format kode negara, misalnya 62812xxxx.',true);return}
+ let q=id?sb.from('pks').update({nama:name,nomor_whatsapp:wa||null}).eq('id',id):sb.from('pks').insert({nama:name,nomor_whatsapp:wa||null});const {error}=await q;if(error){msg('pksMsg','Gagal menyimpan: '+error.message,true);return}msg('pksMsg','Data PKS tersimpan.');$('pksId').value='';$('pksName').value='';$('pksWa').value='';await refreshData()};
+$('resetPks').onclick=()=>{$('pksId').value='';$('pksName').value='';$('pksWa').value=''};
+$('pricePks').onchange=()=>{const pr=priceFor($('pricePks').value);$('priceValue').value=pr?.harga_per_kg??'';$('priceDate').value=pr?.tanggal_berlaku||$('spbDate').value};
+$('savePrice').onclick=async()=>{hide('priceMsg');const id=Number($('pricePks').value),price=Number($('priceValue').value),date=$('priceDate').value;if(!id||!Number.isFinite(price)||price<0||!date){msg('priceMsg','Pilih PKS, isi harga dan tanggal berlaku dengan benar.',true);return}
+ const {error}=await sb.from('harga_tbs').upsert({pks_id:id,harga_per_kg:Math.round(price),tanggal_berlaku:date,updated_at:new Date().toISOString()},{onConflict:'pks_id'});if(error){msg('priceMsg','Gagal menyimpan: '+error.message,true);return}msg('priceMsg','Harga terbaru berhasil diperbarui.');await refreshData();if('Notification'in window&&Notification.permission==='granted')new Notification('Harga TBS diperbarui',{body:'Harga '+(pksCache.find(p=>String(p.id)===String(id))?.nama||'PKS')+' telah diperbarui.'})};
+$('sendWhatsApp').onclick=()=>{hide('spbMsg');const id=$('spbPks').value,p=pksCache.find(x=>String(x.id)===String(id));if(!p){msg('spbMsg','Pilih PKS tujuan.',true);return}if(!p.nomor_whatsapp){msg('spbMsg','Nomor WhatsApp untuk PKS ini belum diatur admin.',true);return}const name=$('spbName').value.trim(),supplier=$('spbSupplier').value.trim(),ton=Number($('spbTonnage').value),date=$('spbDate').value,note=$('spbNote').value.trim();if(!name||!supplier||!date||!Number.isFinite(ton)||ton<=0){msg('spbMsg','Nama pemohon, supplier, tanggal dan tonase wajib diisi.',true);return}
+ const text=`PERMOHONAN SPB\nMITRA TBS KETAPANG\n\nPerusahaan/PKS: ${p.nama}\nNama pemohon: ${name}\nNama supplier: ${supplier}\nTanggal permohonan: ${date}\nTonase diajukan: ${ton} ton\nKeterangan: ${note||'-'}\n\nMohon informasi proses permohonan SPB. Terima kasih.`;
+ window.open('https://wa.me/'+p.nomor_whatsapp+'?text='+encodeURIComponent(text),'_blank','noopener');msg('spbMsg','WhatsApp dibuka dengan pesan yang sudah disiapkan. Tekan Kirim di WhatsApp untuk mengirim permohonan.')};
+function renderUserPksChecks(){ $('userPksChecks').innerHTML=pksCache.map(p=>`<label style="font-weight:500"><input type="checkbox" value="${p.id}" style="width:auto;margin-right:8px"> ${escapeHtml(p.nama)}</label>`).join('')||'Belum ada PKS.'}
+$('saveUser').onclick=async()=>{hide('userMsg');const id=$('userUid').value.trim(),email=$('userEmail').value.trim(),password=$('userPassword').value,name=$('userName').value.trim(),role=$('userRole').value,active=$('userActive').value==='true';const ids=[...$('userPksChecks').querySelectorAll('input:checked')].map(x=>Number(x.value));if(!name){msg('userMsg','Nama tampilan wajib diisi.',true);return}
+ if(!id){if(!email||!password){msg('userMsg','Untuk akun baru, email dan kata sandi wajib diisi.',true);return}if(password.length<8){msg('userMsg','Kata sandi minimal 8 karakter.',true);return}const {data:{session}}=await sb.auth.getSession();if(!session?.access_token){msg('userMsg','Sesi login berakhir. Silakan login ulang.',true);return}const response=await fetch('/.netlify/functions/create-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({email,password,nama:name,peran:role,aktif:active,pks_ids:ids})});let result={};try{result=await response.json()}catch{}if(!response.ok){msg('userMsg','Gagal membuat akun: '+(result.error||'Terjadi kesalahan server.'),true);return}msg('userMsg','Akun berhasil dibuat. Pengguna dapat login memakai email dan kata sandi awal.');$('userEmail').value='';$('userPassword').value='';$('userUid').value='';$('userName').value='';$('userRole').value='pengguna';$('userActive').value='true';$('userPksChecks').querySelectorAll('input').forEach(c=>c.checked=false);await renderUsers();return}
+ const {error}=await sb.from('profil_pengguna').upsert({id,nama:name,peran:role,aktif:active});if(error){msg('userMsg','Gagal menyimpan profil: '+error.message,true);return}const {error:delErr}=await sb.from('akses_pks').delete().eq('pengguna_id',id);if(delErr){msg('userMsg','Profil tersimpan, tetapi akses lama gagal diperbarui: '+delErr.message,true);return}if(ids.length){const {error:insErr}=await sb.from('akses_pks').insert(ids.map(pks_id=>({pengguna_id:id,pks_id})));if(insErr){msg('userMsg','Profil tersimpan, tetapi akses PKS gagal: '+insErr.message,true);return}}msg('userMsg','Profil dan akses PKS berhasil diperbarui.');$('userUid').value='';$('userEmail').value='';$('userPassword').value='';await renderUsers()};
+async function renderUsers(){const {data:us,error}=await sb.from('profil_pengguna').select('id,nama,peran,aktif,created_at').order('created_at',{ascending:false});if(error){$('usersList').innerHTML='<div class="notice error">Tidak dapat memuat profil: '+escapeHtml(error.message)+'</div>';return}
+ $('usersList').innerHTML=(us||[]).map(u=>`<div class="item"><div class="itemtop"><div><h3>${escapeHtml(u.nama||'Tanpa nama')}</h3><div class="muted small">${escapeHtml(u.id)}</div><div class="muted">${u.peran==='admin'?'Admin utama':'Pengguna'} · ${u.aktif?'Aktif':'Nonaktif'}</div></div><button class="secondary" onclick="loadProfile('${u.id}')">Edit akses</button></div></div>`).join('')}
+window.loadProfile=async id=>{const {data:u}=await sb.from('profil_pengguna').select('*').eq('id',id).single();if(!u)return;$('userUid').value=u.id;$('userEmail').value='';$('userPassword').value='';$('userName').value=u.nama||'';$('userRole').value=u.peran;$('userActive').value=String(u.aktif);const {data:access}=await sb.from('akses_pks').select('pks_id').eq('pengguna_id',id);const ids=(access||[]).map(x=>String(x.pks_id));$('userPksChecks').querySelectorAll('input').forEach(c=>c.checked=ids.includes(String(c.value)));window.scrollTo({top:$('tab-users').offsetTop,behavior:'smooth'})};
+function setupTabs(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['prices','pks','users'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab))})}
+initClient();
+</script>
+</body></html>
