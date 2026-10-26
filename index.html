@@ -181,8 +181,69 @@ function renderUserPksChecks(){ $('userPksChecks').innerHTML=pksCache.map(p=>`<l
 $('saveUser').onclick=async()=>{hide('userMsg');const id=$('userUid').value.trim(),email=$('userEmail').value.trim(),password=$('userPassword').value,name=$('userName').value.trim(),role=$('userRole').value,active=$('userActive').value==='true';const ids=[...$('userPksChecks').querySelectorAll('input:checked')].map(x=>Number(x.value));if(!name){msg('userMsg','Nama tampilan wajib diisi.',true);return}
  if(!id){if(!email||!password){msg('userMsg','Untuk akun baru, email dan kata sandi wajib diisi.',true);return}if(password.length<8){msg('userMsg','Kata sandi minimal 8 karakter.',true);return}const {data:{session}}=await sb.auth.getSession();if(!session?.access_token){msg('userMsg','Sesi login berakhir. Silakan login ulang.',true);return}const response=await fetch('/.netlify/functions/create-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({email,password,nama:name,peran:role,aktif:active,pks_ids:ids})});let result={};try{result=await response.json()}catch{}if(!response.ok){msg('userMsg','Gagal membuat akun: '+(result.error||'Terjadi kesalahan server.'),true);return}msg('userMsg','Akun berhasil dibuat. Pengguna dapat login memakai email dan kata sandi awal.');$('userEmail').value='';$('userPassword').value='';$('userUid').value='';$('userName').value='';$('userRole').value='pengguna';$('userActive').value='true';$('userPksChecks').querySelectorAll('input').forEach(c=>c.checked=false);await renderUsers();return}
  const {error}=await sb.from('profil_pengguna').upsert({id,nama:name,peran:role,aktif:active});if(error){msg('userMsg','Gagal menyimpan profil: '+error.message,true);return}const {error:delErr}=await sb.from('akses_pks').delete().eq('pengguna_id',id);if(delErr){msg('userMsg','Profil tersimpan, tetapi akses lama gagal diperbarui: '+delErr.message,true);return}if(ids.length){const {error:insErr}=await sb.from('akses_pks').insert(ids.map(pks_id=>({pengguna_id:id,pks_id})));if(insErr){msg('userMsg','Profil tersimpan, tetapi akses PKS gagal: '+insErr.message,true);return}}msg('userMsg','Profil dan akses PKS berhasil diperbarui.');$('userUid').value='';$('userEmail').value='';$('userPassword').value='';await renderUsers()};
-async function renderUsers(){const {data:us,error}=await sb.from('profil_pengguna').select('id,nama,peran,aktif,created_at').order('created_at',{ascending:false});if(error){$('usersList').innerHTML='<div class="notice error">Tidak dapat memuat profil: '+escapeHtml(error.message)+'</div>';return}
- $('usersList').innerHTML=(us||[]).map(u=>`<div class="item"><div class="itemtop"><div><h3>${escapeHtml(u.nama||'Tanpa nama')}</h3><div class="muted small">${escapeHtml(u.id)}</div><div class="muted">${u.peran==='admin'?'Admin utama':'Pengguna'} · ${u.aktif?'Aktif':'Nonaktif'}</div></div><button class="secondary" onclick="loadProfile('${u.id}')">Edit akses</button></div></div>`).join('')}
+
+async function renderUsers(){
+  const {data:us,error}=await sb.from('profil_pengguna')
+    .select('id,nama,peran,aktif,created_at')
+    .order('created_at',{ascending:false});
+
+  if(error){
+    $('usersList').innerHTML='<div class="notice error">Tidak dapat memuat profil: '+escapeHtml(error.message)+'</div>';
+    return;
+  }
+
+  $('usersList').innerHTML=(us||[]).map(u=>`
+    <div class="item">
+      <div class="itemtop">
+        <div>
+          <h3>${escapeHtml(u.nama||'Tanpa nama')}</h3>
+          <div class="muted small">${escapeHtml(u.id)}</div>
+          <div class="muted">${u.peran==='admin'?'Admin utama':'Pengguna'} · ${u.aktif?'Aktif':'Nonaktif'}</div>
+        </div>
+        <div class="row">
+          <button class="secondary" onclick="loadProfile('${u.id}')">Edit akses</button>
+          ${u.peran!=='admin'?`<button class="danger" onclick="deleteUser('${u.id}')">Hapus</button>`:''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}         
+
+window.deleteUser = async function(id) {
+  if (!confirm('Yakin ingin menghapus akun mitra ini? Tindakan ini tidak dapat dibatalkan.')) return;
+
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (!session?.access_token) {
+    alert('Sesi admin berakhir. Silakan login kembali.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/.netlify/functions/delete-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token
+      },
+      body: JSON.stringify({ id })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert('Gagal menghapus pengguna: ' + (result.error || 'Terjadi kesalahan.'));
+      return;
+    }
+
+    alert('Akun mitra berhasil dihapus.');
+    await refreshData();
+  } catch (error) {
+    alert('Tidak dapat menghubungi server. Silakan coba lagi.');
+  }
+};
+  
+  
 window.loadProfile=async id=>{const {data:u}=await sb.from('profil_pengguna').select('*').eq('id',id).single();if(!u)return;$('userUid').value=u.id;$('userEmail').value='';$('userPassword').value='';$('userName').value=u.nama||'';$('userRole').value=u.peran;$('userActive').value=String(u.aktif);const {data:access}=await sb.from('akses_pks').select('pks_id').eq('pengguna_id',id);const ids=(access||[]).map(x=>String(x.pks_id));$('userPksChecks').querySelectorAll('input').forEach(c=>c.checked=ids.includes(String(c.value)));window.scrollTo({top:$('tab-users').offsetTop,behavior:'smooth'})};
 function setupTabs(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['prices','pks','users'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab))})}
 initClient();
