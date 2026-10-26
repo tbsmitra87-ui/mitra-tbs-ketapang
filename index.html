@@ -148,7 +148,25 @@ function renderUserPrices(){const list=pksCache.filter(p=>allowedPks.includes(St
 function renderSpbOptions(){const list=pksCache.filter(p=>allowedPks.includes(String(p.id)));$('spbPks').innerHTML='<option value="">Pilih PKS tujuan</option>'+list.map(p=>`<option value="${p.id}">${escapeHtml(p.nama)}</option>`).join('')}
 function renderAdminPrices(){$('pricePks').innerHTML=pksCache.map(p=>`<option value="${p.id}">${escapeHtml(p.nama)}</option>`).join('');$('adminPriceList').innerHTML=pksCache.map(p=>{const pr=priceFor(p.id);return `<div class="item"><div class="itemtop"><h3>${escapeHtml(p.nama)}</h3><span class="tag">Harga saat ini</span></div><div class="price">${pr?rupiah(pr.harga_per_kg)+'/kg':'Belum diatur'}</div><div class="muted">Berlaku: ${pr?dateId(pr.tanggal_berlaku):'—'}</div></div>`}).join('')}
 function renderPks(){$('pksList').innerHTML=pksCache.map(p=>`<div class="item"><div class="itemtop"><div><h3>${escapeHtml(p.nama)}</h3><div class="muted">WhatsApp: ${escapeHtml(p.nomor_whatsapp||'Belum diatur')}</div></div><div class="row"><button class="secondary" onclick="window.editPks('${p.id}')">Ubah</button><button class="danger" onclick="deletePks('${p.id}')">Hapus</button></div></div></div>`).join('')}
-window.editPks=id=>{const p=pksCache.find(x=>x.id===id);if(!p)return;$('pksId').value=p.id;$('pksName').value=p.nama;$('pksWa').value=p.nomor_whatsapp||''};
+window.editPks = function(id) {
+  const p = pksCache.find(x => String(x.id) === String(id));
+
+  if (!p) {
+    alert('Data PKS tidak ditemukan. Silakan muat ulang halaman.');
+    return;
+  }
+
+  $('pksId').value = p.id;
+  $('pksName').value = p.nama || '';
+  $('pksWa').value = p.nomor_whatsapp || '';
+
+  $('pksName').scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  });
+
+  $('pksName').focus();
+};
 window.deletePks=async id=>{if(!confirm('Hapus PKS ini? Akses user terkait juga akan terhapus.'))return;const {error}=await sb.from('pks').delete().eq('id',id);if(error){alert('Gagal: '+error.message);return}await refreshData()};
 $('savePks').onclick=async()=>{hide('pksMsg');const id=$('pksId').value,name=$('pksName').value.trim(),wa=$('pksWa').value.replace(/\D/g,'');if(!name){msg('pksMsg','Nama PKS wajib diisi.',true);return}if(wa&&wa.length<10){msg('pksMsg','Nomor WhatsApp terlalu pendek. Gunakan format kode negara, misalnya 62812xxxx.',true);return}
  let q=id?sb.from('pks').update({nama:name,nomor_whatsapp:wa||null}).eq('id',id):sb.from('pks').insert({nama:name,nomor_whatsapp:wa||null});const {error}=await q;if(error){msg('pksMsg','Gagal menyimpan: '+error.message,true);return}msg('pksMsg','Data PKS tersimpan.');$('pksId').value='';$('pksName').value='';$('pksWa').value='';await refreshData()};
