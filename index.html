@@ -98,8 +98,37 @@ function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',curren
 function show(id){$(id).classList.remove('hidden')}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dateId(s){if(!s)return 'Tanggal belum diatur';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
-function config(){return {url:localStorage.getItem('mtbs_url')||'',key:localStorage.getItem('mtbs_key')||''}}
-function initClient(){const c=config();if(!c.url||!c.key){show('config');hide('login');return}if(!window.supabase||typeof window.supabase.createClient!=='function'){show('config');hide('login');msg('config','Pustaka koneksi Supabase belum termuat. Pastikan internet aktif, lalu buka ulang halaman ini di Chrome. Jika tetap sama, gunakan versi aplikasi yang dihosting online.',true);return}try{sb=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});hide('config');show('login');sb.auth.getSession().then(({data,error})=>{if(error){show('config');msg('config','Koneksi tersimpan, tetapi pemeriksaan sesi gagal: '+error.message,true);return}if(data.session)loadApp()}).catch(e=>{show('config');msg('config','Gagal memeriksa koneksi: '+(e.message||e),true)})}catch(e){show('config');hide('login');msg('config','Tidak dapat memulai koneksi: '+(e.message||e),true)}}
+let appConfig = null;
+function config(){return appConfig || {url:localStorage.getItem('mtbs_url')||'',key:localStorage.getItem('mtbs_key')||''}}
+async function initClient(){
+  try {
+    const r = await fetch('/.netlify/functions/public-config');
+    if (!r.ok) throw new Error('Konfigurasi Netlify tidak tersedia');
+    appConfig = await r.json();
+    const c = config();
+    if (!c.url || !c.key) throw new Error('Konfigurasi Supabase kosong');
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+      throw new Error('Pustaka Supabase belum termuat');
+    }
+    sb = window.supabase.createClient(c.url, c.key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+    hide('config');
+    show('login');
+    const { data, error } = await sb.auth.getSession();
+    if (error) throw error;
+    if (data.session) await loadApp();
+  } catch (e) {
+    show('config');
+    hide('login');
+    msg('config', 'Koneksi otomatis gagal: ' + (e.message || e), true);
+  }
+}
+  
 $('saveConfig').addEventListener('click',()=>{try{const url=$('sbUrl').value.trim(),key=$('sbKey').value.trim();if(!url.startsWith('https://')||!key){msg('config','URL atau anon/public key belum benar.',true);return}localStorage.setItem('mtbs_url',url);localStorage.setItem('mtbs_key',key);msg('config','Pengaturan tersimpan. Memeriksa pustaka koneksi...',false);initClient()}catch(e){msg('config','Browser tidak mengizinkan penyimpanan lokal untuk halaman ini. Buka aplikasi melalui Chrome atau gunakan versi online. Detail: '+(e.message||e),true)}});
 $('loginBtn').onclick=async()=>{hide('loginMsg');const {error}=await sb.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error){msg('loginMsg','Login gagal: '+error.message,true);return}await loadApp()};
 $('logoutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;profile=null;hide('app');show('login')};
